@@ -1,0 +1,16 @@
+{
+  "name": "shop",
+  "displayName": "电商商城",
+  "version": "1.0.0",
+  "description": "商品展示、购物车、微信支付、AI卖点提炼",
+  "dependencies": ["base"],
+  "pages": [
+    { "path": "pages/product/list", "style": { "navigationBarTitleText": "健康商城" } },
+    { "path": "pages/product/detail", "style": { "navigationBarTitleText": "商品详情" } },
+    { "path": "pages/cart/index", "style": { "navigationBarTitleText": "购物车" } },
+    { "path": "pages/order/list", "style": { "navigationBarTitleText": "我的订单" } }
+  ],
+  "tabbar": { "pagePath": "pages/product/list", "text": "商城", "iconPath": "static/tab/shop.png", "selectedIconPath": "static/tab/shop-active.png" },
+  "api": ["shop.js"],
+  "aiFeatures": ["AI卖点提炼", "智能分类", "关联推荐", "商品图优化"]
+}

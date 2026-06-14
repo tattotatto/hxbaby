@@ -1,0 +1,107 @@
+<template>
+  <view class="page">
+    <!-- User header -->
+    <view class="header">
+      <view class="header-bg"></view>
+      <view class="user-info">
+        <image :src="user.avatar||'/static/default-avatar.png'" mode="aspectFill" class="avatar"/>
+        <view class="user-detail">
+          <view class="nickname">{{user.nickname||'未登录'}}</view>
+          <view class="level-badge">{{user.level||'普通会员'}}</view>
+        </view>
+      </view>
+      <view class="stats-row">
+        <view class="stat-item">
+          <text class="stat-num">{{user.points||0}}</text>
+          <text class="stat-label">积分</text>
+        </view>
+        <view class="stat-item">
+          <text class="stat-num">{{user.coupons||0}}</text>
+          <text class="stat-label">优惠券</text>
+        </view>
+        <view class="stat-item">
+          <text class="stat-num">{{user.collections||0}}</text>
+          <text class="stat-label">收藏</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- Menu list -->
+    <view class="menu-section">
+      <view class="menu-group">
+        <view class="menu-item" @tap="navigateTo('/pages/order/list')">
+          <text class="menu-icon">📦</text>
+          <text class="menu-label">我的订单</text>
+          <text class="menu-arrow">></text>
+        </view>
+        <view class="menu-item" @tap="navigateTo('/pages/booking/list')">
+          <text class="menu-icon">📋</text>
+          <text class="menu-label">我的预约</text>
+          <text class="menu-arrow">></text>
+        </view>
+        <view class="menu-item" @tap="navigateTo('/pages/activity/list')">
+          <text class="menu-icon">🎉</text>
+          <text class="menu-label">我的报名</text>
+          <text class="menu-arrow">></text>
+        </view>
+      </view>
+      <view class="menu-group">
+        <view class="menu-item" @tap="navigateTo('/pages/coupon/list')">
+          <text class="menu-icon">🎫</text>
+          <text class="menu-label">优惠券</text>
+          <text class="menu-arrow">></text>
+        </view>
+        <view class="menu-item" @tap="navigateTo('/pages/member/settings')">
+          <text class="menu-icon">⚙️</text>
+          <text class="menu-label">设置</text>
+          <text class="menu-arrow">></text>
+        </view>
+      </view>
+    </view>
+
+    <!-- Footer -->
+    <view class="footer">
+      <text>{{footer}}</text>
+    </view>
+  </view>
+</template>
+
+<script setup>
+import {ref, onMounted} from 'vue';
+import baas from '@/common/baas-sdk';
+
+const user=ref({});
+
+onMounted(()=>loadProfile());
+
+async function loadProfile(){
+  try{user.value=await baas.getProfile();}
+  catch{/* use defaults */}
+}
+
+function navigateTo(url){
+  uni.navigateTo({url});
+}
+</script>
+
+<style scoped>
+.page{background:#f5f5f5; min-height:100vh;}
+.header{position:relative; padding-bottom:20px;}
+.header-bg{position:absolute; top:0; left:0; right:0; height:180px; background:linear-gradient(135deg, {{primaryColor}}, {{primaryColor}}cc); border-radius:0 0 24px 24px;}
+.user-info{position:relative; display:flex; align-items:center; padding:40px 20px 0; gap:14px;}
+.avatar{width:64px; height:64px; border-radius:50%; border:3px solid rgba(255,255,255,0.5);}
+.nickname{font-size:18px; font-weight:600; color:#fff;}
+.level-badge{display:inline-block; margin-top:4px; padding:2px 10px; background:rgba(255,255,255,0.25); border-radius:10px; font-size:12px; color:#fff;}
+.stats-row{position:relative; display:flex; margin:20px 16px 0; background:#fff; border-radius:12px; padding:16px 0; box-shadow:0 2px 8px rgba(0,0,0,0.06);}
+.stat-item{flex:1; text-align:center;}
+.stat-num{display:block; font-size:20px; font-weight:700; color:{{primaryColor}};}
+.stat-label{display:block; font-size:12px; color:#999; margin-top:4px;}
+.menu-section{padding:12px 16px;}
+.menu-group{background:#fff; border-radius:12px; margin-bottom:12px; overflow:hidden;}
+.menu-item{display:flex; align-items:center; padding:14px 16px; border-bottom:1px solid #f5f5f5;}
+.menu-item:last-child{border-bottom:none;}
+.menu-icon{font-size:18px; margin-right:12px;}
+.menu-label{flex:1; font-size:15px; color:#333;}
+.menu-arrow{font-size:14px; color:#ccc;}
+.footer{text-align:center; padding:30px 0 40px; font-size:12px; color:#ccc;}
+</style>

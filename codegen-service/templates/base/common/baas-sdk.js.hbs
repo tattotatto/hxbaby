@@ -1,0 +1,66 @@
+/**
+ * BaaS SDK — 小程序后端即服务 SDK
+ * 自动附带 X-API-Key，所有请求与 {{projectId}} 项目关联
+ */
+class BaaS {
+  constructor() {
+    this.baseURL = '{{baasBaseURL}}';
+    this.apiKey = '{{apiKey}}';
+    this.projectId = '{{projectId}}';
+  }
+
+  async _request(method, path, data = null) {
+    return new Promise((resolve, reject) => {
+      uni.request({
+        url: `${this.baseURL}/baas/v1${path}`,
+        method,
+        data,
+        header: {
+          'Content-Type': 'application/json',
+          'X-API-Key': this.apiKey,
+        },
+        success: (res) => {
+          if (res.statusCode >= 200 && res.statusCode < 300) {
+            resolve(res.data?.data || res.data);
+          } else {
+            reject(new Error(res.data?.message || '请求失败'));
+          }
+        },
+        fail: reject,
+      });
+    });
+  }
+
+  // 内容
+  getArticles(params) { return this._request('GET', '/articles', params); }
+  getArticle(id) { return this._request('GET', `/articles/${id}`); }
+
+  // AI 对话
+  async aiChat(message, childId) {
+    return this._request('POST', '/ai/chat', { message, child_id: childId });
+  }
+
+  // 电商
+  getProducts(params) { return this._request('GET', '/products', params); }
+  getProduct(id) { return this._request('GET', `/products/${id}`); }
+  createOrder(data) { return this._request('POST', '/orders', data); }
+  getOrders(params) { return this._request('GET', '/orders', params); }
+
+  // 活动
+  getActivities(params) { return this._request('GET', '/activities', params); }
+  getActivity(id) { return this._request('GET', `/activities/${id}`); }
+  signupActivity(id, data) { return this._request('POST', `/activities/${id}/signup`, data); }
+
+  // 用户
+  wxLogin(code) { return this._request('POST', '/auth/wx-login', { code }); }
+  getProfile() { return this._request('GET', '/user/profile'); }
+  updateProfile(data) { return this._request('PUT', '/user/profile', data); }
+
+  // 预约
+  getBookingSlots(params) { return this._request('GET', '/bookings/slots', params); }
+  createBooking(data) { return this._request('POST', '/bookings', data); }
+  getBookings(params) { return this._request('GET', '/bookings', params); }
+}
+
+const baas = new BaaS();
+export default baas;

@@ -1,0 +1,15 @@
+{
+  "name": "booking",
+  "displayName": "预约挂号",
+  "version": "1.0.0",
+  "description": "在线预约、时段选择、排队叫号",
+  "dependencies": ["base"],
+  "pages": [
+    { "path": "pages/booking/slots", "style": { "navigationBarTitleText": "选择时段" } },
+    { "path": "pages/booking/form", "style": { "navigationBarTitleText": "预约信息" } }
+  ],
+  "tabbar": { "pagePath": "pages/booking/slots", "text": "预约", "iconPath": "/static/tabbar/booking.png", "selectedIconPath": "/static/tabbar/booking-active.png" },
+  "api": ["booking.js"],
+  "components": [],
+  "configSchema": {}
+}

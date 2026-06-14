@@ -1,0 +1,204 @@
+<template>
+  <view class="page">
+    <!-- Category tabs -->
+    <scroll-view scroll-x class="category-tabs">
+      <view
+        v-for="cat in categories"
+        :key="cat"
+        class="tab-item"
+        :class="{ active: currentCategory === cat }"
+        @tap="switchCategory(cat)"
+      >
+        {{ cat }}
+      </view>
+    </scroll-view>
+
+    <!-- Article list -->
+    <view class="article-list">
+      <view v-if="loading" class="loading">加载中...</view>
+      <view v-else-if="articles.length === 0" class="empty">
+        <image src="/static/empty.png" mode="aspectFit" class="empty-img" />
+        <text class="empty-text">暂无文章</text>
+      </view>
+      <view
+        v-for="article in articles"
+        :key="article.id"
+        class="article-card"
+        @tap="goDetail(article.id)"
+      >
+        <image
+          v-if="article.cover_image"
+          :src="article.cover_image"
+          mode="aspectFill"
+          class="cover-img"
+        />
+        <view class="card-body">
+          <view class="title">{{ article.title }}</view>
+          <view class="summary">{{ article.summary || '' }}</view>
+          <view class="meta">
+            <text class="category">{{ article.category }}</text>
+            <text class="views">{{ article.view_count }} 阅读</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- Load more -->
+    <view v-if="hasMore" class="load-more" @tap="loadMore">
+      {{ loadingMore ? '加载中...' : '加载更多' }}
+    </view>
+  </view>
+</template>
+
+<script setup>
+import { ref, onMounted } from 'vue';
+import baas from '@/common/baas-sdk';
+
+const articles = ref([]);
+const loading = ref(true);
+const loadingMore = ref(false);
+const currentCategory = ref('');
+const categories = ref(['全部', '健康资讯', '育儿知识', '营养辅食', '成长发育']);
+const page = ref(1);
+const hasMore = ref(true);
+
+onMounted(() => {
+  loadArticles();
+});
+
+async function loadArticles(reset = false) {
+  if (reset) {
+    page.value = 1;
+    articles.value = [];
+    hasMore.value = true;
+  }
+
+  try {
+    const params = { page: page.value, page_size: 20 };
+    if (currentCategory.value && currentCategory.value !== '全部') {
+      params.category = currentCategory.value;
+    }
+    const data = await baas.getArticles(params);
+    if (data.items) {
+      if (reset) {
+        articles.value = data.items;
+      } else {
+        articles.value = [...articles.value, ...data.items];
+      }
+      hasMore.value = articles.value.length < data.total;
+    }
+  } catch (err) {
+    uni.showToast({ title: '加载失败', icon: 'none' });
+  } finally {
+    loading.value = false;
+    loadingMore.value = false;
+  }
+}
+
+function switchCategory(cat) {
+  currentCategory.value = cat;
+  loadArticles(true);
+}
+
+function loadMore() {
+  if (loadingMore.value || !hasMore.value) return;
+  loadingMore.value = true;
+  page.value++;
+  loadArticles();
+}
+
+function goDetail(id) {
+  uni.navigateTo({ url: `/pages/article/detail?id=${id}` });
+}
+</script>
+
+<style scoped>
+.page {
+  background: #f5f5f5;
+  min-height: 100vh;
+}
+.category-tabs {
+  background: #fff;
+  white-space: nowrap;
+  padding: 12px 16px;
+  border-bottom: 1px solid #f0f0f0;
+}
+.tab-item {
+  display: inline-block;
+  padding: 6px 16px;
+  margin-right: 8px;
+  border-radius: 20px;
+  font-size: 14px;
+  color: #666;
+  background: #f5f5f5;
+}
+.tab-item.active {
+  background: {{primaryColor}};
+  color: #fff;
+}
+.article-list {
+  padding: 16px;
+}
+.article-card {
+  background: #fff;
+  border-radius: 12px;
+  margin-bottom: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+.cover-img {
+  width: 100%;
+  height: 160px;
+}
+.card-body {
+  padding: 12px;
+}
+.title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 8px;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+.summary {
+  font-size: 13px;
+  color: #999;
+  margin-bottom: 8px;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+.meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #bbb;
+}
+.empty {
+  text-align: center;
+  padding: 60px 0;
+}
+.empty-img {
+  width: 120px;
+  height: 120px;
+  margin-bottom: 12px;
+}
+.empty-text {
+  color: #999;
+}
+.loading {
+  text-align: center;
+  padding: 24px;
+  color: #999;
+}
+.load-more {
+  text-align: center;
+  padding: 16px;
+  color: {{primaryColor}};
+  font-size: 14px;
+}
+</style>

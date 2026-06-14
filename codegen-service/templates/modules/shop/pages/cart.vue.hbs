@@ -1,0 +1,116 @@
+<template>
+  <view class="page">
+    <view v-if="loading" class="loading">加载中...</view>
+    <template v-else-if="cartItems.length">
+      <view class="cart-list">
+        <view v-for="item in cartItems" :key="item.id" class="cart-item">
+          <view class="check-wrap" @tap="toggleCheck(item.id)">
+            <view class="checkbox" :class="{checked:checkedIds.includes(item.id)}"></view>
+          </view>
+          <image :src="item.image||'/static/placeholder.png'" mode="aspectFill" class="item-img"/>
+          <view class="item-info">
+            <view class="item-name">{{item.name}}</view>
+            <view class="item-price">¥{{item.price}}</view>
+            <view class="item-qty">
+              <view class="qty-btn" @tap="changeQty(item.id,-1)">-</view>
+              <text class="qty-val">{{item.quantity}}</text>
+              <view class="qty-btn" @tap="changeQty(item.id,1)">+</view>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <!-- Bottom bar -->
+      <view class="bottom-bar">
+        <view class="select-all" @tap="toggleAll">
+          <view class="checkbox" :class="{checked:isAllChecked}"></view>
+          <text>全选</text>
+        </view>
+        <view class="total-row">
+          <text class="total-label">合计:</text>
+          <text class="total-price">¥{{totalPrice}}</text>
+        </view>
+        <button class="checkout-btn" @tap="checkout">去结算({{checkedIds.length}})</button>
+      </view>
+    </template>
+    <view v-else class="empty">
+      <image src="/static/empty-cart.png" mode="aspectFit" class="empty-img"/>
+      <text class="empty-text">购物车是空的</text>
+    </view>
+  </view>
+</template>
+
+<script setup>
+import {ref, computed, onMounted} from 'vue';
+import baas from '@/common/baas-sdk';
+
+const cartItems=ref([]);
+const checkedIds=ref([]);
+const loading=ref(true);
+
+const isAllChecked=computed(()=>cartItems.value.length>0&&checkedIds.value.length===cartItems.value.length);
+const totalPrice=computed(()=>{
+  return cartItems.value.filter(i=>checkedIds.value.includes(i.id)).reduce((s,i)=>s+i.price*i.quantity,0).toFixed(2);
+});
+
+onMounted(()=>loadCart());
+
+async function loadCart(){
+  loading.value=true;
+  try{
+    const data=await baas.getProducts({cart:true});
+    cartItems.value=(data.items||[]).map(i=>({...i,image:(()=>{try{return JSON.parse(i.images)[0];}catch{return i.images;}})()}));
+  }catch{uni.showToast({title:'加载失败',icon:'none'});}
+  finally{loading.value=false;}
+}
+function toggleCheck(id){
+  const idx=checkedIds.value.indexOf(id);
+  if(idx>-1) checkedIds.value.splice(idx,1);
+  else checkedIds.value.push(id);
+}
+function toggleAll(){
+  if(isAllChecked.value) checkedIds.value=[];
+  else checkedIds.value=cartItems.value.map(i=>i.id);
+}
+function changeQty(id,d){
+  const item=cartItems.value.find(i=>i.id===id);
+  if(item){item.quantity=Math.max(1,item.quantity+d); if(item.quantity<=1&&d<0){cartItems.value=cartItems.value.filter(i=>i.id!==id); checkedIds.value=checkedIds.value.filter(i=>i!==id);}}
+}
+async function checkout(){
+  if(!checkedIds.value.length) return uni.showToast({title:'请选择商品',icon:'none'});
+  const items=cartItems.value.filter(i=>checkedIds.value.includes(i.id));
+  try{
+    await baas.createOrder({items:items.map(i=>({product_id:i.id,quantity:i.quantity}))});
+    uni.showToast({title:'下单成功',icon:'success'});
+    cartItems.value=cartItems.value.filter(i=>!checkedIds.value.includes(i.id));
+    checkedIds.value=[];
+  }catch{uni.showToast({title:'下单失败',icon:'none'});}
+}
+</script>
+
+<style scoped>
+.page{background:#f5f5f5; min-height:100vh; padding-bottom:60px;}
+.loading{text-align:center; padding:60px 0; color:#999;}
+.cart-list{padding:8px 0;}
+.cart-item{display:flex; background:#fff; margin:4px 8px; padding:12px; border-radius:12px; align-items:center; gap:10px;}
+.check-wrap{padding:4px;}
+.checkbox{width:20px; height:20px; border-radius:50%; border:2px solid #ddd;}
+.checkbox.checked{background:{{primaryColor}}; border-color:{{primaryColor}}; position:relative;}
+.checkbox.checked::after{content:''; position:absolute; left:5px; top:2px; width:6px; height:10px; border:solid #fff; border-width:0 2px 2px 0; transform:rotate(45deg);}
+.item-img{width:80px; height:80px; border-radius:8px;}
+.item-info{flex:1;}
+.item-name{font-size:14px; font-weight:600; color:#333; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.item-price{font-size:16px; font-weight:700; color:{{primaryColor}}; margin-top:4px;}
+.item-qty{display:flex; align-items:center; gap:8px; margin-top:6px;}
+.qty-btn{width:24px; height:24px; border-radius:50%; background:#f5f5f5; display:flex; align-items:center; justify-content:center; font-size:14px; color:#333;}
+.qty-val{font-size:14px; min-width:20px; text-align:center;}
+.bottom-bar{position:fixed; bottom:0; left:0; right:0; display:flex; align-items:center; padding:10px 16px; background:#fff; border-top:1px solid #f0f0f0; gap:8px;}
+.select-all{display:flex; align-items:center; gap:6px; font-size:13px; color:#666;}
+.total-row{flex:1; text-align:right; margin-right:8px;}
+.total-label{font-size:13px; color:#666;}
+.total-price{font-size:18px; font-weight:700; color:{{primaryColor}};}
+.checkout-btn{width:120px; height:40px; border-radius:20px; background:{{primaryColor}}; color:#fff; font-size:14px; border:none; line-height:40px;}
+.empty{text-align:center; padding:80px 0;}
+.empty-img{width:120px; height:120px; margin-bottom:12px;}
+.empty-text{color:#999; font-size:15px;}
+</style>

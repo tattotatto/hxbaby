@@ -1,0 +1,117 @@
+<template>
+  <view class="page">
+    <!-- Date picker -->
+    <view class="date-bar">
+      <view class="date-arrow" @tap="prevDay"><</view>
+      <view class="date-display">
+        <picker mode="date" :value="selectedDate" @change="onDateChange">
+          <text class="date-text">{{displayDate}}</text>
+        </picker>
+      </view>
+      <view class="date-arrow" @tap="nextDay">></view>
+    </view>
+
+    <!-- Quick date selects -->
+    <scroll-view scroll-x class="date-strip">
+      <view v-for="d in dateOptions" :key="d.value" class="date-chip" :class="{active:d.value===selectedDate}" @tap="selectDate(d.value)">
+        <text class="chip-week">{{d.week}}</text>
+        <text class="chip-day">{{d.day}}</text>
+      </view>
+    </scroll-view>
+
+    <!-- Time slots -->
+    <view v-if="loading" class="loading">加载中...</view>
+    <view v-else-if="slots.length===0" class="empty">
+      <text class="empty-text">该日期暂无可用时段</text>
+    </view>
+    <view v-else class="slot-list">
+      <view v-for="slot in slots" :key="slot.id" class="slot-item" :class="{disabled:!slot.available}" @tap="selectSlot(slot)">
+        <view class="slot-time">
+          <text class="time-text">{{slot.start_time}} - {{slot.end_time}}</text>
+        </view>
+        <view class="slot-info">
+          <text v-if="slot.available" class="available">可预约(余{{slot.remaining}}位)</text>
+          <text v-else class="unavailable">已约满</text>
+        </view>
+        <view v-if="slot.available" class="slot-arrow">></view>
+      </view>
+    </view>
+  </view>
+</template>
+
+<script setup>
+import {ref, computed, onMounted} from 'vue';
+import baas from '@/common/baas-sdk';
+
+const slots=ref([]);
+const loading=ref(true);
+const selectedDate=ref('');
+
+onMounted(()=>{
+  const today=new Date();
+  selectedDate.value=formatDateStr(today);
+  loadSlots();
+});
+
+const displayDate=computed(()=>{
+  const d=new Date(selectedDate.value);
+  return `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日`;
+});
+
+const dateOptions=computed(()=>{
+  const opts=[];
+  const today=new Date();
+  const weekDays=['周日','周一','周二','周三','周四','周五','周六'];
+  for(let i=0;i<7;i++){
+    const d=new Date(today);
+    d.setDate(d.getDate()+i);
+    opts.push({
+      value:formatDateStr(d),
+      week:weekDays[d.getDay()],
+      day:String(d.getDate()).padStart(2,'0'),
+    });
+  }
+  return opts;
+});
+
+function formatDateStr(d){return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
+
+async function loadSlots(){
+  loading.value=true;
+  try{
+    const data=await baas.getBookingSlots({date:selectedDate.value});
+    slots.value=data.items||data.slots||[];
+  }catch{uni.showToast({title:'加载时段失败',icon:'none'});}
+  finally{loading.value=false;}
+}
+function selectSlot(slot){
+  if(!slot.available)return;
+  uni.navigateTo({url:`/pages/booking/form?slotId=${slot.id}&date=${selectedDate.value}&time=${slot.start_time}-${slot.end_time}`});
+}
+function onDateChange(e){selectedDate.value=e.detail.value; loadSlots();}
+function selectDate(d){selectedDate.value=d; loadSlots();}
+function prevDay(){const d=new Date(selectedDate.value);d.setDate(d.getDate()-1);selectedDate.value=formatDateStr(d);loadSlots();}
+function nextDay(){const d=new Date(selectedDate.value);d.setDate(d.getDate()+1);selectedDate.value=formatDateStr(d);loadSlots();}
+</script>
+
+<style scoped>
+.page{background:#f5f5f5; min-height:100vh;}
+.date-bar{display:flex; align-items:center; justify-content:space-between; padding:14px 20px; background:#fff;}
+.date-arrow{font-size:18px; color:{{primaryColor}}; padding:4px 8px;}
+.date-text{font-size:16px; font-weight:600; color:#333;}
+.date-strip{white-space:nowrap; padding:10px 12px; background:#fff; border-top:1px solid #f5f5f5;}
+.date-chip{display:inline-flex; flex-direction:column; align-items:center; padding:6px 14px; margin-right:8px; border-radius:12px; background:#f5f5f5;}
+.date-chip.active{background:{{primaryColor}}; color:#fff;}
+.chip-week{font-size:11px;}
+.chip-day{font-size:15px; font-weight:600; margin-top:2px;}
+.date-chip.active .chip-week,.date-chip.active .chip-day{color:#fff;}
+.loading,.empty{text-align:center; padding:60px 0; color:#999;}
+.slot-list{padding:8px;}
+.slot-item{display:flex; align-items:center; padding:16px; background:#fff; border-radius:12px; margin:4px 0; gap:10px;}
+.slot-item.disabled{opacity:0.5;}
+.slot-time{flex:1;}
+.time-text{font-size:16px; font-weight:600; color:#333;}
+.available{font-size:13px; color:{{primaryColor}};}
+.unavailable{font-size:13px; color:#999;}
+.slot-arrow{font-size:14px; color:#ccc;}
+</style>

@@ -1,0 +1,105 @@
+<template>
+  <view class="page">
+    <view v-if="loading" class="loading">加载中...</view>
+    <template v-else-if="activity">
+      <!-- Cover image -->
+      <image :src="activity.cover_image||activity.poster||'/static/placeholder.png'" mode="aspectFill" class="cover"/>
+
+      <view class="content">
+        <!-- Title -->
+        <view class="title">{{activity.title}}</view>
+
+        <!-- Meta info -->
+        <view class="meta">
+          <view class="meta-item">
+            <text class="meta-icon">📅</text>
+            <text>{{formatDate(activity.start_time)}} - {{formatDate(activity.end_time)}}</text>
+          </view>
+          <view v-if="activity.location" class="meta-item">
+            <text class="meta-icon">📍</text>
+            <text>{{activity.location}}</text>
+          </view>
+          <view class="meta-item">
+            <text class="meta-icon">👥</text>
+            <text>{{activity.signup_count||0}}人已报名 / {{activity.max_participants||'不限'}}人</text>
+          </view>
+        </view>
+
+        <!-- AI copy section -->
+        <view v-if="activity.ai_copy" class="ai-section">
+          <view class="ai-header">
+            <text>🤖 AI活动介绍</text>
+          </view>
+          <view class="ai-body">
+            <rich-text :nodes="activity.ai_copy"></rich-text>
+          </view>
+        </view>
+
+        <!-- Description -->
+        <view class="desc-section">
+          <view class="section-title">活动详情</view>
+          <view class="desc-body">
+            <rich-text :nodes="activity.description||'暂无详细介绍'"></rich-text>
+          </view>
+        </view>
+      </view>
+
+      <!-- Bottom signup bar -->
+      <view class="bottom-bar">
+        <view class="signup-info">
+          <text class="signup-count">{{activity.signup_count||0}}人已报名</text>
+        </view>
+        <button class="signup-btn" @tap="goSignup">立即报名</button>
+      </view>
+    </template>
+    <view v-else class="empty">
+      <text>活动不存在</text>
+    </view>
+  </view>
+</template>
+
+<script setup>
+import {ref, onMounted} from 'vue';
+import baas from '@/common/baas-sdk';
+
+const activity=ref(null);
+const loading=ref(true);
+
+onMounted(()=>{
+  const pages=getCurrentPages();
+  const id=pages[pages.length-1].options?.id;
+  if(id) loadActivity(parseInt(id));
+});
+
+async function loadActivity(id){
+  try{activity.value=await baas.getActivity(id);}
+  catch{uni.showToast({title:'加载失败',icon:'none'});}
+  finally{loading.value=false;}
+}
+function goSignup(){
+  uni.navigateTo({url:`/pages/activity/signup?id=${activity.value.id}`});
+}
+function formatDate(d){if(!d)return'';const dt=new Date(d);return`${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;}
+</script>
+
+<style scoped>
+.page{background:#f5f5f5; min-height:100vh; padding-bottom:60px;}
+.loading,.empty{text-align:center; padding:60px 0; color:#999;}
+.cover{width:100%; height:220px;}
+.content{padding:16px;}
+.title{font-size:20px; font-weight:700; color:#333; line-height:1.4; margin-bottom:16px;}
+.meta{background:#fff; border-radius:12px; padding:14px; margin-bottom:12px;}
+.meta-item{display:flex; align-items:center; gap:6px; font-size:13px; color:#666; margin-bottom:8px;}
+.meta-item:last-child{margin-bottom:0;}
+.meta-icon{font-size:14px;}
+.ai-section{background:linear-gradient(135deg,#f5f0ff,#fff0f5); border-radius:12px; padding:14px; margin-bottom:12px;}
+.ai-header{font-size:14px; font-weight:600; color:#7c4dff; margin-bottom:8px;}
+.ai-body{font-size:14px; color:#333; line-height:1.8;}
+.desc-section{background:#fff; border-radius:12px; padding:14px; margin-bottom:12px;}
+.section-title{font-size:16px; font-weight:600; color:#333; margin-bottom:10px; padding-bottom:8px; border-bottom:2px solid {{primaryColor}}; display:inline-block;}
+.desc-body{font-size:14px; color:#666; line-height:1.8;}
+.bottom-bar{position:fixed; bottom:0; left:0; right:0; display:flex; align-items:center; padding:10px 16px; background:#fff; border-top:1px solid #f0f0f0; gap:12px;}
+.signup-info{flex:1;}
+.signup-count{font-size:13px; color:#999;}
+.signup-btn{width:140px; height:44px; border-radius:22px; background:{{primaryColor}}; color:#fff; font-size:16px; font-weight:600; border:none; line-height:44px;}
+</style>

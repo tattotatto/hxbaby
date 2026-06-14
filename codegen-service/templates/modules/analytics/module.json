@@ -1,0 +1,13 @@
+{
+  "name": "analytics",
+  "displayName": "成长分析",
+  "version": "1.0.0",
+  "description": "生长数据、健康记录、发育曲线、AI建议",
+  "dependencies": ["base"],
+  "pages": [
+    { "path": "pages/analytics/index", "style": { "navigationBarTitleText": "成长分析" } }
+  ],
+  "api": ["analytics.js"],
+  "components": [],
+  "configSchema": {}
+}

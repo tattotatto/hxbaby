@@ -1,0 +1,22 @@
+{
+  "name": "cms",
+  "displayName": "内容管理",
+  "version": "1.0.0",
+  "description": "文章发布、公告管理、轮播图",
+  "dependencies": ["base"],
+  "pages": [
+    { "path": "pages/article/list", "style": { "navigationBarTitleText": "资讯" } },
+    { "path": "pages/article/detail", "style": { "navigationBarTitleText": "文章详情" } }
+  ],
+  "tabbar": {
+    "pagePath": "pages/article/list",
+    "text": "资讯",
+    "iconPath": "/static/tabbar/cms.png",
+    "selectedIconPath": "/static/tabbar/cms-active.png"
+  },
+  "api": ["content.js"],
+  "components": [],
+  "configSchema": {
+    "categories": { "type": "array", "default": ["健康资讯", "育儿知识"] }
+  }
+}

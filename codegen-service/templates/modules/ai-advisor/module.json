@@ -1,0 +1,22 @@
+{
+  "name": "ai-advisor",
+  "displayName": "AI健康顾问",
+  "version": "1.0.0",
+  "description": "智能问答、症状评估、生长记录、健康报告",
+  "dependencies": ["base"],
+  "pages": [
+    { "path": "pages/chat/index", "style": { "navigationBarTitleText": "AI健康顾问" } },
+    { "path": "pages/symptom/index", "style": { "navigationBarTitleText": "症状评估" } },
+    { "path": "pages/growth/index", "style": { "navigationBarTitleText": "生长记录" } },
+    { "path": "pages/report/index", "style": { "navigationBarTitleText": "健康报告" } }
+  ],
+  "tabbar": {
+    "pagePath": "pages/chat/index",
+    "text": "AI顾问",
+    "iconPath": "/static/tabbar/ai.png",
+    "selectedIconPath": "/static/tabbar/ai-active.png"
+  },
+  "api": ["ai.js"],
+  "components": [],
+  "configSchema": {}
+}

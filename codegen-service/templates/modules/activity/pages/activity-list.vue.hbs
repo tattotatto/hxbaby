@@ -1,0 +1,106 @@
+<template>
+  <view class="page">
+    <!-- Status tabs -->
+    <view class="tab-bar">
+      <view v-for="tab in tabs" :key="tab.key" class="tab-item" :class="{active:activeTab===tab.key}" @tap="switchTab(tab.key)">
+        {{tab.label}}
+      </view>
+    </view>
+
+    <!-- Activity list -->
+    <view v-if="loading" class="loading">加载中...</view>
+    <view v-else-if="activities.length===0" class="empty">
+      <text class="empty-text">暂无活动</text>
+    </view>
+    <view v-else class="activity-list">
+      <view v-for="act in activities" :key="act.id" class="activity-card" @tap="goDetail(act.id)">
+        <view class="card-img-wrap">
+          <image :src="act.cover_image||act.poster||'/static/placeholder.png'" mode="aspectFill" class="card-img"/>
+          <view class="card-status" :style="{background:statusBg(act.status)}">{{statusLabel(act.status)}}</view>
+        </view>
+        <view class="card-body">
+          <view class="card-title">{{act.title}}</view>
+          <view class="card-time">
+            <text class="time-icon">📅</text>
+            <text>{{formatDate(act.start_time)}} - {{formatDate(act.end_time)}}</text>
+          </view>
+          <view v-if="act.location" class="card-location">
+            <text class="loc-icon">📍</text>
+            <text>{{act.location}}</text>
+          </view>
+          <view class="card-footer">
+            <text class="participants">{{act.signup_count||0}}人已报名</text>
+            <text class="arrow">></text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view v-if="hasMore" class="load-more" @tap="loadMore">
+      {{loadingMore?'加载中...':'加载更多'}}
+    </view>
+  </view>
+</template>
+
+<script setup>
+import {ref, onMounted} from 'vue';
+import baas from '@/common/baas-sdk';
+
+const activities=ref([]);
+const loading=ref(true);
+const loadingMore=ref(false);
+const activeTab=ref('ongoing');
+const page=ref(1);
+const hasMore=ref(true);
+
+const tabs=[
+  {key:'ongoing',label:'进行中'},
+  {key:'upcoming',label:'即将开始'},
+  {key:'ended',label:'已结束'},
+];
+
+const statusLabelMap={ongoing:'进行中',upcoming:'即将开始',ended:'已结束'};
+const statusBgMap={ongoing:'#4caf50',upcoming:'#ff9800',ended:'#999'};
+function statusLabel(s){return statusLabelMap[s]||s;}
+function statusBg(s){return statusBgMap[s]||'#999';}
+
+onMounted(()=>loadActivities());
+
+async function loadActivities(reset){
+  if(reset){page.value=1; activities.value=[]; hasMore.value=true;}
+  loading.value=reset;
+  try{
+    const data=await baas.getActivities({page:page.value, page_size:20, status:activeTab.value});
+    if(data.items){
+      activities.value=reset?data.items:[...activities.value,...data.items];
+      hasMore.value=activities.value.length<data.total;
+    }
+  }catch{uni.showToast({title:'加载失败',icon:'none'});}
+  finally{loading.value=false; loadingMore.value=false;}
+}
+function switchTab(tab){activeTab.value=tab; loadActivities(true);}
+function loadMore(){if(loadingMore.value||!hasMore.value)return; loadingMore.value=true; page.value++; loadActivities();}
+function goDetail(id){uni.navigateTo({url:`/pages/activity/detail?id=${id}`});}
+function formatDate(d){if(!d)return'';const dt=new Date(d);return`${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;}
+</script>
+
+<style scoped>
+.page{background:#f5f5f5; min-height:100vh;}
+.tab-bar{display:flex; background:#fff; padding:0; border-bottom:1px solid #f0f0f0;}
+.tab-item{flex:1; text-align:center; padding:12px 0; font-size:14px; color:#666; position:relative;}
+.tab-item.active{color:{{primaryColor}}; font-weight:600;}
+.tab-item.active::after{content:''; position:absolute; bottom:0; left:50%; transform:translateX(-50%); width:24px; height:3px; background:{{primaryColor}}; border-radius:2px;}
+.loading,.empty{text-align:center; padding:60px 0; color:#999;}
+.activity-list{padding:8px;}
+.activity-card{background:#fff; border-radius:12px; margin:0 0 12px; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,0.06);}
+.card-img-wrap{position:relative; width:100%; height:160px;}
+.card-img{width:100%; height:100%;}
+.card-status{position:absolute; top:10px; right:10px; padding:2px 10px; border-radius:10px; font-size:11px; color:#fff;}
+.card-body{padding:12px 14px;}
+.card-title{font-size:16px; font-weight:600; color:#333; margin-bottom:8px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.card-time,.card-location{display:flex; align-items:center; gap:4px; font-size:13px; color:#999; margin-bottom:4px;}
+.card-footer{display:flex; justify-content:space-between; align-items:center; margin-top:8px; padding-top:8px; border-top:1px solid #f5f5f5;}
+.participants{font-size:12px; color:{{primaryColor}};}
+.arrow{font-size:14px; color:#ccc;}
+.load-more{text-align:center; padding:16px; color:{{primaryColor}}; font-size:14px;}
+</style>

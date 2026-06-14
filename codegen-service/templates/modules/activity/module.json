@@ -1,0 +1,15 @@
+{
+  "name": "activity",
+  "displayName": "活动管理",
+  "version": "1.0.0",
+  "description": "活动发布、报名、签到、分享裂变、AI文案海报",
+  "dependencies": ["base"],
+  "pages": [
+    { "path": "pages/activity/list", "style": { "navigationBarTitleText": "精彩活动" } },
+    { "path": "pages/activity/detail", "style": { "navigationBarTitleText": "活动详情" } },
+    { "path": "pages/activity/signup", "style": { "navigationBarTitleText": "活动报名" } }
+  ],
+  "tabbar": { "pagePath": "pages/activity/list", "text": "活动", "iconPath": "static/tab/activity.png", "selectedIconPath": "static/tab/activity-active.png" },
+  "api": ["activity.js"],
+  "aiFeatures": ["AI文案生成", "AI海报生成", "人群定向", "活动复盘"]
+}

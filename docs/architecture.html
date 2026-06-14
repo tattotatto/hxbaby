@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>儿童大健康AI系统 — 架构全景图</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: linear-gradient(135deg, #0c1929 0%, #1a2332 50%, #0d1b2a 100%);
+    min-height: 100vh; padding: 40px 20px; color: #e0e0e0;
+  }
+  .container { max-width: 1100px; margin: 0 auto; }
+  h1 {
+    text-align: center; font-size: 28px; font-weight: 700;
+    background: linear-gradient(135deg, #64b5f6, #26c6da);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text; margin-bottom: 6px;
+  }
+  .subtitle { text-align: center; color: #8e9aaf; font-size: 14px; margin-bottom: 40px; }
+
+  .arch { display: flex; flex-direction: column; gap: 0; align-items: center; }
+
+  .layer {
+    border-radius: 12px; padding: 18px 28px; width: 100%; max-width: 900px;
+    position: relative; text-align: center;
+  }
+
+  /* Client Layer */
+  .layer-client {
+    background: linear-gradient(135deg, rgba(100,181,246,0.12), rgba(38,198,218,0.08));
+    border: 1.5px solid rgba(100,181,246,0.4);
+    margin-bottom: 0;
+  }
+  .layer-client .layer-title { color: #64b5f6; }
+  .client-icons { display: flex; justify-content: center; gap: 32px; margin-top: 10px; flex-wrap: wrap; }
+  .client-icon {
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    color: #b0bec5; font-size: 13px;
+  }
+  .client-icon .icon { font-size: 28px; }
+
+  /* Arrows */
+  .arrow-down {
+    display: flex; flex-direction: column; align-items: center;
+    color: #546e7a; font-size: 12px; padding: 4px 0;
+  }
+  .arrow-down .line { width: 2px; height: 20px; background: linear-gradient(to bottom, #546e7a, #78909c); }
+  .arrow-down .arrowhead { font-size: 14px; }
+
+  /* Gateway Layer */
+  .layer-gateway {
+    background: linear-gradient(135deg, rgba(76,175,80,0.12), rgba(102,187,106,0.08));
+    border: 1.5px solid rgba(76,175,80,0.45);
+  }
+  .layer-gateway .layer-title { color: #66bb6a; }
+
+  /* Split arrow */
+  .split-arrows {
+    display: flex; justify-content: center; gap: 200px; padding: 0;
+    position: relative;
+  }
+  .split-arrow { display: flex; flex-direction: column; align-items: center; }
+  .split-arrow .line { width: 2px; height: 18px; background: linear-gradient(to bottom, #78909c, #ff9800); }
+  .split-line-h { display: flex; align-items: center; width: 500px; justify-content: center; }
+  .split-line-h .h-left, .split-line-h .h-right { height: 2px; flex: 1; }
+  .split-line-h .h-left { background: linear-gradient(to right, #78909c, #ff9800); }
+  .split-line-h .h-right { background: linear-gradient(to left, #78909c, #7c4dff); }
+  .split-line-h .dot { width: 6px; height: 6px; border-radius: 50%; background: #78909c; margin: 0 6px; }
+
+  /* Dual service layer */
+  .dual-services { display: flex; gap: 50px; max-width: 900px; width: 100%; justify-content: center; }
+
+  .service-box {
+    flex: 1; max-width: 380px; border-radius: 12px; padding: 20px 22px; text-align: center;
+  }
+  .service-ai {
+    background: linear-gradient(135deg, rgba(255,111,0,0.10), rgba(255,145,0,0.05));
+    border: 2px solid rgba(255,152,0,0.5);
+  }
+  .service-ai .service-title { color: #ff9800; font-size: 18px; font-weight: 700; }
+  .service-biz {
+    background: linear-gradient(135deg, rgba(124,77,255,0.10), rgba(149,117,255,0.05));
+    border: 2px solid rgba(124,77,255,0.5);
+  }
+  .service-biz .service-title { color: #b388ff; font-size: 18px; font-weight: 700; }
+
+  .service-items { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; justify-content: center; }
+  .service-tag {
+    padding: 5px 12px; border-radius: 16px; font-size: 12px; white-space: nowrap;
+  }
+  .tag-ai { background: rgba(255,152,0,0.18); color: #ffb74d; border: 1px solid rgba(255,152,0,0.3); }
+  .tag-biz { background: rgba(179,136,255,0.18); color: #ce93d8; border: 1px solid rgba(179,136,255,0.3); }
+
+  /* Merge arrows */
+  .merge-arrows {
+    display: flex; justify-content: center; gap: 200px; padding: 0;
+  }
+
+  /* Data layer */
+  .layer-data {
+    background: linear-gradient(135deg, rgba(0,131,143,0.10), rgba(0,151,167,0.05));
+    border: 1.5px solid rgba(0,188,212,0.4);
+  }
+  .layer-data .layer-title { color: #4dd0e1; }
+  .data-boxes { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; margin-top: 10px; }
+  .data-box {
+    border-radius: 10px; padding: 14px 18px; min-width: 130px; text-align: center;
+  }
+  .db-pg { background: rgba(66,165,245,0.12); border: 1px solid rgba(66,165,245,0.45); color: #90caf9; }
+  .db-mv { background: rgba(0,188,212,0.12); border: 1px solid rgba(0,188,212,0.45); color: #80deea; }
+  .db-redis { background: rgba(239,83,80,0.12); border: 1px solid rgba(239,83,80,0.45); color: #ef9a9a; }
+  .db-oss { background: rgba(255,152,0,0.12); border: 1px solid rgba(255,152,0,0.45); color: #ffcc80; }
+  .data-box .db-icon { font-size: 24px; margin-bottom: 4px; }
+  .data-box .db-name { font-weight: 700; font-size: 14px; }
+  .data-box .db-desc { font-size: 11px; opacity: 0.7; }
+
+  /* LLM Layer */
+  .layer-llm {
+    background: linear-gradient(135deg, rgba(233,30,99,0.10), rgba(255,64,129,0.05));
+    border: 1.5px solid rgba(233,30,99,0.45);
+  }
+  .layer-llm .layer-title { color: #f06292; }
+
+  /* Knowledge pipeline */
+  .layer-kb {
+    margin-top: 16px;
+    background: rgba(255,255,255,0.03); border: 1px dashed rgba(255,255,255,0.15);
+    border-radius: 10px; padding: 14px 24px; text-align: center; max-width: 900px; width: 100%;
+  }
+  .layer-kb .layer-title { color: #a0aec0; font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+  .kb-flow { display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; font-size: 12px; color: #8e9aaf; }
+  .kb-step {
+    background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 6px; padding: 6px 12px;
+  }
+  .kb-arrow { color: #546e7a; }
+
+  /* Design principles */
+  .principles {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; max-width: 900px;
+    margin: 32px auto 0; width: 100%;
+  }
+  @media (max-width: 800px) { .principles { grid-template-columns: 1fr 1fr; } }
+  .principle {
+    border-radius: 10px; padding: 16px; text-align: left;
+    background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);
+  }
+  .principle .p-icon { font-size: 22px; margin-bottom: 6px; }
+  .principle .p-title { font-size: 14px; font-weight: 700; color: #e0e0e0; margin-bottom: 4px; }
+  .principle .p-desc { font-size: 12px; color: #9ea7b0; line-height: 1.6; }
+
+  .legend {
+    display: flex; justify-content: center; gap: 20px; flex-wrap: wrap;
+    margin-top: 24px; font-size: 11px; color: #6b7a8d;
+  }
+  .legend span { display: flex; align-items: center; gap: 5px; }
+  .legend .dot { width: 8px; height: 8px; border-radius: 2px; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>🏥 儿童大健康AI资料库系统</h1>
+  <p class="subtitle">Python AI + Go 业务 混合架构 &nbsp;·&nbsp; 对话式 &nbsp;·&nbsp; API优先 &nbsp;·&nbsp; 多租户</p>
+
+  <div class="arch">
+
+    <!-- Client Layer -->
+    <div class="layer layer-client">
+      <div class="layer-title">📱 客户端层</div>
+      <div class="client-icons">
+        <div class="client-icon"><span class="icon">💬</span>微信小程序</div>
+        <div class="client-icon"><span class="icon">🌐</span>H5 页面</div>
+        <div class="client-icon"><span class="icon">🖥️</span>机构管理后台</div>
+        <div class="client-icon"><span class="icon">🔌</span>第三方 App</div>
+      </div>
+    </div>
+
+    <!-- Arrow -->
+    <div class="arrow-down"><div class="line"></div><span>HTTPS / REST API</span><div class="arrowhead">▼</div></div>
+
+    <!-- Gateway Layer -->
+    <div class="layer layer-gateway">
+      <div class="layer-title">🔀 API 网关 &nbsp;—&nbsp; Go · Gin</div>
+      <div style="display:flex;gap:16px;justify-content:center;margin-top:8px;flex-wrap:wrap;">
+        <span class="service-tag" style="background:rgba(102,187,106,0.15);color:#a5d6a7;border:1px solid rgba(102,187,106,0.3);">🔐 JWT 认证</span>
+        <span class="service-tag" style="background:rgba(102,187,106,0.15);color:#a5d6a7;border:1px solid rgba(102,187,106,0.3);">⏱️ 限流控制</span>
+        <span class="service-tag" style="background:rgba(102,187,106,0.15);color:#a5d6a7;border:1px solid rgba(102,187,106,0.3);">🔗 路由分发</span>
+        <span class="service-tag" style="background:rgba(102,187,106,0.15);color:#a5d6a7;border:1px solid rgba(102,187,106,0.3);">📝 日志追踪</span>
+        <span class="service-tag" style="background:rgba(102,187,106,0.15);color:#a5d6a7;border:1px solid rgba(102,187,106,0.3);">📊 监控告警</span>
+      </div>
+    </div>
+
+    <!-- Split arrows -->
+    <div class="arrow-down">
+      <div class="split-line-h">
+        <div class="h-left"></div><div class="dot"></div><div class="h-right"></div>
+      </div>
+    </div>
+    <div class="split-arrows">
+      <div class="split-arrow"><div class="line"></div><div class="arrowhead">▼</div></div>
+      <div class="split-arrow"><div class="line"></div><div class="arrowhead">▼</div></div>
+    </div>
+
+    <!-- Dual Services -->
+    <div class="dual-services">
+      <!-- AI Service -->
+      <div class="service-box service-ai">
+        <div class="service-title">🧠 AI 服务 &nbsp;—&nbsp; Python</div>
+        <div style="font-size:11px;color:#8e9aaf;margin-top:2px;">FastAPI · LangChain/LangGraph</div>
+        <div class="service-items">
+          <span class="service-tag tag-ai">🔍 RAG 检索增强</span>
+          <span class="service-tag tag-ai">💬 LLM 对话生成</span>
+          <span class="service-tag tag-ai">🩺 症状分析评估</span>
+          <span class="service-tag tag-ai">📚 知识库检索</span>
+          <span class="service-tag tag-ai">🎯 建议生成</span>
+          <span class="service-tag tag-ai">🏷️ 产品匹配推荐</span>
+          <span class="service-tag tag-ai">📊 评估报告生成</span>
+        </div>
+      </div>
+
+      <!-- Business Service -->
+      <div class="service-box service-biz">
+        <div class="service-title">⚙️ 业务服务 &nbsp;—&nbsp; Go</div>
+        <div style="font-size:11px;color:#8e9aaf;margin-top:2px;">Gin · GORM · JWT</div>
+        <div class="service-items">
+          <span class="service-tag tag-biz">👤 用户管理</span>
+          <span class="service-tag tag-biz">💬 对话管理</span>
+          <span class="service-tag tag-biz">👶 儿童档案</span>
+          <span class="service-tag tag-biz">🛍️ 产品管理</span>
+          <span class="service-tag tag-biz">🎯 推荐逻辑</span>
+          <span class="service-tag tag-biz">🏢 租户隔离</span>
+          <span class="service-tag tag-biz">🔐 微信登录</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Merge arrows -->
+    <div class="merge-arrows">
+      <div class="split-arrow"><div class="line"></div></div>
+      <div class="split-arrow"><div class="line"></div></div>
+    </div>
+    <div class="arrow-down">
+      <div class="line"></div><div class="arrowhead">▼</div>
+    </div>
+
+    <!-- Data Layer -->
+    <div class="layer layer-data">
+      <div class="layer-title">💾 数据 & 基础设施层</div>
+      <div class="data-boxes">
+        <div class="data-box db-pg">
+          <div class="db-icon">🐘</div>
+          <div class="db-name">PostgreSQL</div>
+          <div class="db-desc">业务数据 · 档案 · 对话</div>
+        </div>
+        <div class="data-box db-mv">
+          <div class="db-icon">🔍</div>
+          <div class="db-name">Milvus</div>
+          <div class="db-desc">向量检索 · 知识匹配</div>
+        </div>
+        <div class="data-box db-redis">
+          <div class="db-icon">⚡</div>
+          <div class="db-name">Redis</div>
+          <div class="db-desc">缓存 · 会话 · 队列</div>
+        </div>
+        <div class="data-box db-oss">
+          <div class="db-icon">📦</div>
+          <div class="db-name">OSS / MinIO</div>
+          <div class="db-desc">文档 · 图片 · 报告</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Arrow -->
+    <div class="arrow-down">
+      <div class="line"></div><span>API 调用（适配器模式）</span><div class="arrowhead">▼</div>
+    </div>
+
+    <!-- LLM Layer -->
+    <div class="layer layer-llm">
+      <div class="layer-title">🤖 LLM 模型层（适配器模式 · 可随时切换）</div>
+      <div style="display:flex;gap:16px;justify-content:center;margin-top:8px;flex-wrap:wrap;">
+        <span class="service-tag" style="background:rgba(240,98,146,0.18);color:#f8bbd0;border:1px solid rgba(240,98,146,0.35);">⭐ 通义千问 Qwen-Plus</span>
+        <span class="service-tag" style="background:rgba(240,98,146,0.18);color:#f8bbd0;border:1px solid rgba(240,98,146,0.35);">DeepSeek-V3</span>
+        <span class="service-tag" style="background:rgba(240,98,146,0.18);color:#f8bbd0;border:1px solid rgba(240,98,146,0.35);">文心一言</span>
+        <span class="service-tag" style="background:rgba(240,98,146,0.18);color:#f8bbd0;border:1px solid rgba(240,98,146,0.35);">bge-large-zh (Embedding)</span>
+      </div>
+    </div>
+
+    <!-- Knowledge Pipeline -->
+    <div class="layer-kb">
+      <div class="layer-title">📋 资料库管理管道</div>
+      <div class="kb-flow">
+        <span class="kb-step">📄 文档导入</span>
+        <span class="kb-arrow">→</span>
+        <span class="kb-step">🔧 预处理清洗</span>
+        <span class="kb-arrow">→</span>
+        <span class="kb-step">✂️ 智能分块</span>
+        <span class="kb-arrow">→</span>
+        <span class="kb-step">🧮 向量化</span>
+        <span class="kb-arrow">→</span>
+        <span class="kb-step">🏷️ 元数据标注</span>
+        <span class="kb-arrow">→</span>
+        <span class="kb-step">✅ 审核</span>
+        <span class="kb-arrow">→</span>
+        <span class="kb-step">🚀 入库</span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Design Principles -->
+  <div class="principles">
+    <div class="principle">
+      <div class="p-icon">🔗</div>
+      <div class="p-title">服务解耦</div>
+      <div class="p-desc">Go业务服务与Python AI服务通过内部API通信，各自独立部署、独立扩缩容，互不影响。</div>
+    </div>
+    <div class="principle">
+      <div class="p-icon">🏗️</div>
+      <div class="p-title">多租户架构</div>
+      <div class="p-desc">每个合作机构是独立租户，产品库、用户池完全隔离。共享知识库统一维护。</div>
+    </div>
+    <div class="principle">
+      <div class="p-icon">🔌</div>
+      <div class="p-title">模型可替换</div>
+      <div class="p-desc">适配器模式封装LLM调用，通义千问↔DeepSeek随时切换，业务层无感知。</div>
+    </div>
+    <div class="principle">
+      <div class="p-icon">📊</div>
+      <div class="p-title">可观测性</div>
+      <div class="p-desc">全链路日志、Token用量、检索质量评估、用户反馈闭环，AI行为透明可控。</div>
+    </div>
+  </div>
+
+  <!-- Legend -->
+  <div class="legend">
+    <span><span class="dot" style="background:#ff9800;"></span> AI 服务 (Python)</span>
+    <span><span class="dot" style="background:#b388ff;"></span> 业务服务 (Go)</span>
+    <span><span class="dot" style="background:#66bb6a;"></span> 网关层</span>
+    <span><span class="dot" style="background:#4dd0e1;"></span> 数据层</span>
+    <span><span class="dot" style="background:#f06292;"></span> 模型层</span>
+    <span><span class="dot" style="background:#64b5f6;"></span> 客户端</span>
+  </div>
+
+</div>
+</body>
+</html>

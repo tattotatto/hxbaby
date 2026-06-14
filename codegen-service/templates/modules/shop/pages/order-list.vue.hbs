@@ -1,0 +1,110 @@
+<template>
+  <view class="page">
+    <!-- Status tabs -->
+    <view class="tab-bar">
+      <view v-for="tab in tabs" :key="tab.key" class="tab-item" :class="{active:activeTab===tab.key}" @tap="switchTab(tab.key)">
+        {{tab.label}}
+      </view>
+    </view>
+
+    <!-- Order list -->
+    <view v-if="loading" class="loading">加载中...</view>
+    <view v-else-if="orders.length===0" class="empty">
+      <text class="empty-text">暂无订单</text>
+    </view>
+    <view v-else class="order-list">
+      <view v-for="order in orders" :key="order.id" class="order-card">
+        <view class="order-header">
+          <text class="order-no">订单号: {{order.order_no||order.id}}</text>
+          <text class="order-status" :style="{color:statusColor(order.status)}">{{statusLabel(order.status)}}</text>
+        </view>
+        <view v-for="item in (order.items||[])" :key="item.id" class="order-item">
+          <image :src="item.image||'/static/placeholder.png'" mode="aspectFill" class="item-img"/>
+          <view class="item-info">
+            <view class="item-name">{{item.name}}</view>
+            <view class="item-meta">
+              <text class="item-price">¥{{item.price}}</text>
+              <text class="item-qty">x{{item.quantity}}</text>
+            </view>
+          </view>
+        </view>
+        <view class="order-footer">
+          <text class="order-total">共{{(order.items||[]).reduce((s,i)=>s+i.quantity,0)}}件 合计: </text>
+          <text class="total-price">¥{{order.total_amount||order.amount}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- Load more -->
+    <view v-if="hasMore" class="load-more" @tap="loadMore">
+      {{loadingMore?'加载中...':'加载更多'}}
+    </view>
+  </view>
+</template>
+
+<script setup>
+import {ref, onMounted} from 'vue';
+import baas from '@/common/baas-sdk';
+
+const orders=ref([]);
+const loading=ref(true);
+const loadingMore=ref(false);
+const activeTab=ref('all');
+const page=ref(1);
+const hasMore=ref(true);
+
+const tabs=[
+  {key:'all',label:'全部'},
+  {key:'pending',label:'待付款'},
+  {key:'shipped',label:'待发货'},
+  {key:'completed',label:'已完成'},
+];
+
+const statusMap={pending:'待付款',paid:'已付款',shipped:'已发货',completed:'已完成',cancelled:'已取消'};
+const statusColorMap={pending:'#ff9800',paid:'#2196f3',shipped:'#4caf50',completed:'#999',cancelled:'#ccc'};
+
+function statusLabel(s){return statusMap[s]||s||'未知';}
+function statusColor(s){return statusColorMap[s]||'#999';}
+
+onMounted(()=>loadOrders());
+
+async function loadOrders(reset){
+  if(reset){page.value=1; orders.value=[]; hasMore.value=true;}
+  loading.value=reset;
+  try{
+    const params={page:page.value, page_size:20};
+    if(activeTab.value!=='all') params.status=activeTab.value;
+    const data=await baas.getOrders(params);
+    if(data.items){
+      orders.value=reset?data.items:[...orders.value,...data.items];
+      hasMore.value=orders.value.length<data.total;
+    }
+  }catch{uni.showToast({title:'加载失败',icon:'none'});}
+  finally{loading.value=false; loadingMore.value=false;}
+}
+function switchTab(tab){activeTab.value=tab; loadOrders(true);}
+function loadMore(){if(loadingMore.value||!hasMore.value)return; loadingMore.value=true; page.value++; loadOrders();}
+</script>
+
+<style scoped>
+.page{background:#f5f5f5; min-height:100vh;}
+.tab-bar{display:flex; background:#fff; padding:0; border-bottom:1px solid #f0f0f0;}
+.tab-item{flex:1; text-align:center; padding:12px 0; font-size:14px; color:#666; position:relative;}
+.tab-item.active{color:{{primaryColor}}; font-weight:600;}
+.tab-item.active::after{content:''; position:absolute; bottom:0; left:50%; transform:translateX(-50%); width:24px; height:3px; background:{{primaryColor}}; border-radius:2px;}
+.loading,.empty{text-align:center; padding:60px 0; color:#999;}
+.order-card{background:#fff; margin:8px; border-radius:12px; overflow:hidden;}
+.order-header{display:flex; justify-content:space-between; padding:12px 14px; border-bottom:1px solid #f5f5f5;}
+.order-no{font-size:13px; color:#999;}
+.order-status{font-size:13px; font-weight:600;}
+.order-item{display:flex; padding:10px 14px; gap:10px; align-items:center;}
+.item-img{width:64px; height:64px; border-radius:6px;}
+.item-info{flex:1;}
+.item-name{font-size:14px; color:#333; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.item-meta{display:flex; justify-content:space-between; margin-top:6px;}
+.item-price{font-size:14px; font-weight:600; color:{{primaryColor}};}
+.item-qty{font-size:12px; color:#999;}
+.order-footer{display:flex; justify-content:flex-end; padding:10px 14px; border-top:1px solid #f5f5f5; font-size:13px; color:#333;}
+.total-price{font-weight:700; color:{{primaryColor}}; font-size:16px;}
+.load-more{text-align:center; padding:16px; color:{{primaryColor}}; font-size:14px;}
+</style>

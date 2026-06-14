@@ -1,0 +1,14 @@
+{
+  "name": "member",
+  "displayName": "会员中心",
+  "version": "1.0.0",
+  "description": "会员信息、积分管理、订单入口、优惠券",
+  "dependencies": ["base"],
+  "pages": [
+    { "path": "pages/member/index", "style": { "navigationBarTitleText": "会员中心" } }
+  ],
+  "tabbar": { "pagePath": "pages/member/index", "text": "我的", "iconPath": "/static/tabbar/member.png", "selectedIconPath": "/static/tabbar/member-active.png" },
+  "api": ["user.js"],
+  "components": [],
+  "configSchema": {}
+}

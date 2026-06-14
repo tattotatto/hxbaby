@@ -1,0 +1,259 @@
+<template>
+  <view class="chat-page">
+    <!-- Messages -->
+    <scroll-view
+      scroll-y
+      class="message-list"
+      :scroll-top="scrollTop"
+      :scroll-with-animation="true"
+    >
+      <view v-if="messages.length === 0" class="welcome">
+        <image src="/static/ai-avatar.png" mode="aspectFit" class="ai-avatar" />
+        <text class="welcome-title">AI健康顾问</text>
+        <text class="welcome-sub">我是您的专属儿童健康顾问\n可以问我关于宝宝健康、喂养、发育等方面的问题</text>
+      </view>
+
+      <view
+        v-for="msg in messages"
+        :key="msg.id"
+        class="message-row"
+        :class="msg.role"
+      >
+        <view v-if="msg.role === 'assistant'" class="avatar ai-avatar-sm">
+          <text>🤖</text>
+        </view>
+        <view class="bubble" :class="msg.role">
+          <text>{{ msg.content }}</text>
+        </view>
+        <view v-if="msg.role === 'user'" class="avatar user-avatar-sm">
+          <text>👤</text>
+        </view>
+      </view>
+
+      <view v-if="isTyping" class="message-row assistant">
+        <view class="avatar ai-avatar-sm">
+          <text>🤖</text>
+        </view>
+        <view class="bubble assistant typing">
+          <text>正在思考...</text>
+        </view>
+      </view>
+    </scroll-view>
+
+    <!-- Quick questions -->
+    <view v-if="messages.length === 0" class="quick-questions">
+      <view
+        v-for="q in quickQuestions"
+        :key="q"
+        class="quick-btn"
+        @tap="sendMessage(q)"
+      >
+        {{ q }}
+      </view>
+    </view>
+
+    <!-- Disclaimer -->
+    <view class="disclaimer">
+      <text>⚠️ AI建议仅供参考，不能替代专业医疗诊断。如有紧急情况请及时就医。</text>
+    </view>
+
+    <!-- Input bar -->
+    <view class="input-bar">
+      <input
+        v-model="inputText"
+        class="input"
+        placeholder="输入您的问题..."
+        :disabled="isTyping"
+        @confirm="sendMessage(inputText)"
+      />
+      <button
+        class="send-btn"
+        :disabled="!inputText.trim() || isTyping"
+        @tap="sendMessage(inputText)"
+      >
+        发送
+      </button>
+    </view>
+  </view>
+</template>
+
+<script setup>
+import { ref, nextTick, onMounted } from 'vue';
+import baas from '@/common/baas-sdk';
+
+const messages = ref([]);
+const inputText = ref('');
+const isTyping = ref(false);
+const scrollTop = ref(0);
+
+const quickQuestions = [
+  '宝宝消化不好怎么办？',
+  '婴儿几个月开始添加辅食？',
+  '儿童发烧38度需要吃药吗？',
+  '如何判断宝宝是否缺钙？',
+];
+
+let msgId = 0;
+
+function scrollToBottom() {
+  nextTick(() => {
+    scrollTop.value = scrollTop.value + 10000;
+  });
+}
+
+async function sendMessage(text) {
+  if (!text.trim() || isTyping.value) return;
+  const userMsg = { id: ++msgId, role: 'user', content: text.trim() };
+  messages.value.push(userMsg);
+  inputText.value = '';
+  scrollToBottom();
+
+  isTyping.value = true;
+  try {
+    const data = await baas.aiChat(text.trim(), null);
+    const aiMsg = {
+      id: ++msgId,
+      role: 'assistant',
+      content: data.content || data.message || '抱歉，我暂时无法回答这个问题。',
+    };
+    messages.value.push(aiMsg);
+  } catch (err) {
+    messages.value.push({
+      id: ++msgId,
+      role: 'assistant',
+      content: '抱歉，服务暂时不可用，请稍后再试。',
+    });
+  } finally {
+    isTyping.value = false;
+    scrollToBottom();
+  }
+}
+</script>
+
+<style scoped>
+.chat-page {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: #f5f5f5;
+}
+.message-list {
+  flex: 1;
+  padding: 16px;
+}
+.welcome {
+  text-align: center;
+  padding: 40px 0;
+}
+.ai-avatar {
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 16px;
+}
+.welcome-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 8px;
+}
+.welcome-sub {
+  font-size: 14px;
+  color: #999;
+  line-height: 1.6;
+  white-space: pre-line;
+}
+.message-row {
+  display: flex;
+  margin-bottom: 16px;
+  align-items: flex-start;
+}
+.message-row.user {
+  flex-direction: row-reverse;
+}
+.avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+.bubble {
+  max-width: 70%;
+  padding: 12px 16px;
+  border-radius: 16px;
+  font-size: 15px;
+  line-height: 1.5;
+  margin: 0 8px;
+}
+.bubble.user {
+  background: {{primaryColor}};
+  color: #fff;
+  border-bottom-right-radius: 4px;
+}
+.bubble.assistant {
+  background: #fff;
+  color: #333;
+  border-bottom-left-radius: 4px;
+}
+.bubble.typing {
+  color: #999;
+  font-size: 13px;
+}
+.quick-questions {
+  padding: 0 16px 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.quick-btn {
+  padding: 8px 16px;
+  background: #fff;
+  border: 1px solid {{primaryColor}};
+  color: {{primaryColor}};
+  border-radius: 20px;
+  font-size: 13px;
+}
+.disclaimer {
+  padding: 8px 16px;
+  background: #fff8e1;
+  margin: 0 16px 8px;
+  border-radius: 8px;
+}
+.disclaimer text {
+  font-size: 11px;
+  color: #f57c00;
+  line-height: 1.5;
+}
+.input-bar {
+  display: flex;
+  padding: 8px 16px;
+  background: #fff;
+  border-top: 1px solid #f0f0f0;
+  align-items: center;
+  gap: 8px;
+}
+.input {
+  flex: 1;
+  height: 40px;
+  background: #f5f5f5;
+  border-radius: 20px;
+  padding: 0 16px;
+  font-size: 14px;
+}
+.send-btn {
+  height: 40px;
+  padding: 0 20px;
+  background: {{primaryColor}};
+  color: #fff;
+  border-radius: 20px;
+  font-size: 14px;
+  line-height: 40px;
+  border: none;
+}
+.send-btn[disabled] {
+  background: #ccc;
+}
+</style>

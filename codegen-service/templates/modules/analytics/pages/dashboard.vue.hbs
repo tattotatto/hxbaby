@@ -1,0 +1,145 @@
+<template>
+  <view class="page">
+    <!-- Child selector -->
+    <view v-if="children.length>1" class="child-selector">
+      <picker :range="children" range-key="name" @change="onChildChange">
+        <view class="picker-label">
+          <text>{{currentChild?.name||'选择宝宝'}}</text>
+          <text class="picker-arrow">▼</text>
+        </view>
+      </picker>
+    </view>
+
+    <!-- Growth summary cards -->
+    <view class="card-row">
+      <view class="stat-card">
+        <text class="stat-val">{{growth.height||'--'}}</text>
+        <text class="stat-unit">cm</text>
+        <text class="stat-label">身高</text>
+      </view>
+      <view class="stat-card">
+        <text class="stat-val">{{growth.weight||'--'}}</text>
+        <text class="stat-unit">kg</text>
+        <text class="stat-label">体重</text>
+      </view>
+      <view class="stat-card">
+        <text class="stat-val">{{bmi||'--'}}</text>
+        <text class="stat-unit">BMI</text>
+        <text class="stat-label">体质指数</text>
+      </view>
+    </view>
+
+    <!-- Growth chart placeholder -->
+    <view class="chart-section">
+      <view class="section-header">
+        <text class="section-title">生长曲线</text>
+        <text class="section-sub">最近6次记录</text>
+      </view>
+      <view class="chart-placeholder">
+        <text class="chart-icon">📈</text>
+        <text class="chart-hint">此处将展示宝宝生长曲线图</text>
+      </view>
+    </view>
+
+    <!-- Health records -->
+    <view class="records-section">
+      <view class="section-header">
+        <text class="section-title">健康记录</text>
+        <text class="view-all" @tap="viewAllRecords">查看全部 ></text>
+      </view>
+      <view v-if="records.length===0" class="empty-records">
+        <text class="empty-text">暂无健康记录</text>
+      </view>
+      <view v-for="rec in records" :key="rec.id" class="record-item">
+        <view class="rec-date">{{formatDate(rec.record_date||rec.created_at)}}</view>
+        <view class="rec-detail">
+          <text class="rec-type">{{rec.type||'健康检查'}}</text>
+          <text class="rec-summary">{{rec.summary||rec.description||'暂无详情'}}</text>
+        </view>
+        <view class="rec-arrow">></view>
+      </view>
+    </view>
+
+    <!-- Loading -->
+    <view v-if="loading" class="loading">加载中...</view>
+  </view>
+</template>
+
+<script setup>
+import {ref, computed, onMounted} from 'vue';
+import baas from '@/common/baas-sdk';
+
+const children=ref([]);
+const currentChild=ref(null);
+const growth=ref({});
+const records=ref([]);
+const loading=ref(true);
+
+const bmi=computed(()=>{
+  if(!growth.value.weight||!growth.value.height) return null;
+  const h=growth.value.height/100;
+  return (growth.value.weight/(h*h)).toFixed(1);
+});
+
+onMounted(()=>loadData());
+
+async function loadData(){
+  loading.value=true;
+  try{
+    const profile=await baas.getProfile();
+    children.value=profile.children||[];
+    if(children.value.length) currentChild.value=children.value[0];
+    if(currentChild.value){
+      const [growthData,recordsData]=await Promise.all([
+        baas._request('GET',`/children/${currentChild.value.id}/growth`).catch(()=>({})),
+        baas._request('GET',`/children/${currentChild.value.id}/records?page_size=5`).catch(()=>({})),
+      ]);
+      growth.value=growthData.latest||growthData||{};
+      records.value=(recordsData.items||recordsData.records||[]);
+    }
+  }catch{/* use defaults */}
+  finally{loading.value=false;}
+}
+
+function onChildChange(e){
+  currentChild.value=children.value[e.detail.value];
+  loadData();
+}
+
+function viewAllRecords(){
+  const id=currentChild.value?.id;
+  if(id) uni.navigateTo({url:`/pages/health/records?childId=${id}`});
+}
+
+function formatDate(d){if(!d)return'';const dt=new Date(d);return`${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;}
+</script>
+
+<style scoped>
+.page{background:#f5f5f5; min-height:100vh; padding:12px;}
+.child-selector{padding:8px 0;}
+.picker-label{display:flex; justify-content:center; align-items:center; gap:6px; padding:10px; background:#fff; border-radius:10px; font-size:15px; font-weight:600; color:#333;}
+.picker-arrow{font-size:11px; color:#999;}
+.card-row{display:flex; gap:8px; margin:12px 0;}
+.stat-card{flex:1; background:#fff; border-radius:12px; padding:16px 10px; text-align:center; box-shadow:0 2px 6px rgba(0,0,0,0.04);}
+.stat-val{display:block; font-size:28px; font-weight:700; color:{{primaryColor}};}
+.stat-unit{display:block; font-size:11px; color:#999; margin-top:2px;}
+.stat-label{display:block; font-size:12px; color:#666; margin-top:4px;}
+.chart-section,.records-section{background:#fff; border-radius:12px; padding:14px; margin-bottom:12px;}
+.section-header{display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;}
+.section-title{font-size:16px; font-weight:600; color:#333;}
+.section-sub{font-size:12px; color:#999;}
+.view-all{font-size:13px; color:{{primaryColor}};}
+.chart-placeholder{text-align:center; padding:30px 0; background:#fafafa; border-radius:8px;}
+.chart-icon{font-size:36px; display:block;}
+.chart-hint{font-size:13px; color:#bbb; margin-top:8px;}
+.empty-records{text-align:center; padding:20px 0;}
+.empty-text{color:#999; font-size:13px;}
+.record-item{display:flex; align-items:center; padding:10px 0; border-bottom:1px solid #f5f5f5; gap:10px;}
+.record-item:last-child{border-bottom:none;}
+.rec-date{font-size:12px; color:#999; min-width:80px;}
+.rec-detail{flex:1;}
+.rec-type{display:block; font-size:14px; font-weight:500; color:#333;}
+.rec-summary{display:block; font-size:12px; color:#999; margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.rec-arrow{font-size:14px; color:#ccc;}
+.loading{text-align:center; padding:40px 0; color:#999;}
+</style>

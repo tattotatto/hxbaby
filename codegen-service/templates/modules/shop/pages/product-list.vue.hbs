@@ -1,0 +1,79 @@
+<template>
+  <view class="page">
+    <scroll-view scroll-x class="category-bar">
+      <view v-for="cat in categories" :key="cat" class="cat-item" :class="{active: activeCat===cat}" @tap="switchCat(cat)">
+        {{cat}}
+      </view>
+    </scroll-view>
+    <view class="product-grid">
+      <view v-for="p in products" :key="p.id" class="product-card" @tap="goDetail(p.id)">
+        <image :src="p.images ? JSON.parse(p.images)[0] : '/static/placeholder.png'" mode="aspectFill" class="p-img"/>
+        <view class="p-info">
+          <view class="p-name">{{p.name}}</view>
+          <view v-if="p.ai_tags" class="p-tags">
+            <text v-for="tag in (typeof p.ai_tags==='string' ? JSON.parse(p.ai_tags) : p.ai_tags)" :key="tag" class="tag">{{tag}}</text>
+          </view>
+          <view class="p-price-row">
+            <text class="price">¥{{p.price}}</text>
+            <text v-if="p.original_price" class="orig-price">¥{{p.original_price}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+    <view v-if="loading" class="loading">加载中...</view>
+    <view v-if="!loading && products.length===0" class="empty">
+      <text class="empty-text">暂无商品</text>
+    </view>
+    <view v-if="hasMore" class="load-more" @tap="loadMore">
+      {{loadingMore ? '加载中...' : '加载更多'}}
+    </view>
+  </view>
+</template>
+
+<script setup>
+import {ref, onMounted} from 'vue';
+import baas from '@/common/baas-sdk';
+const products=ref([]);
+const categories=ref(['全部']);
+const activeCat=ref('全部');
+const page=ref(1);
+const loading=ref(true);
+const loadingMore=ref(false);
+const hasMore=ref(true);
+
+onMounted(()=>loadProducts());
+async function loadProducts(reset){
+  if(reset){page.value=1; products.value=[]; hasMore.value=true;}
+  loading.value=reset;
+  try{
+    const data=await baas.getProducts({page:page.value, page_size:20, category:activeCat.value==='全部'?undefined:activeCat.value});
+    if(data.items){
+      products.value=reset?data.items:[...products.value, ...data.items];
+      hasMore.value=products.value.length<data.total;
+    }
+  }catch{uni.showToast({title:'加载失败',icon:'none'});}
+  finally{loading.value=false; loadingMore.value=false;}
+}
+function switchCat(cat){activeCat.value=cat; loadProducts(true);}
+function loadMore(){if(loadingMore.value||!hasMore.value)return; loadingMore.value=true; page.value++; loadProducts();}
+function goDetail(id){uni.navigateTo({url:`/pages/product/detail?id=${id}`});}
+</script>
+
+<style scoped>
+.page{background:#f5f5f5; min-height:100vh;}
+.category-bar{white-space:nowrap; padding:12px; background:#fff;}
+.cat-item{display:inline-block; padding:6px 16px; margin-right:8px; border-radius:20px; font-size:13px; color:#666; background:#f5f5f5;}
+.cat-item.active{background:{{primaryColor}}; color:#fff;}
+.product-grid{display:flex; flex-wrap:wrap; padding:8px;}
+.product-card{width:calc(50% - 8px); margin:4px; background:#fff; border-radius:12px; overflow:hidden;}
+.p-img{width:100%; height:160px;}
+.p-info{padding:8px 10px 12px;}
+.p-name{font-size:14px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.p-tags{margin:4px 0; display:flex; gap:4px; flex-wrap:wrap;}
+.tag{font-size:10px; padding:1px 6px; background:#f5f0ff; color:#7c4dff; border-radius:4px;}
+.p-price-row{display:flex; align-items:baseline; gap:6px; margin-top:4px;}
+.price{font-size:17px; font-weight:700; color:{{primaryColor}};}
+.orig-price{font-size:12px; color:#ccc; text-decoration:line-through;}
+.loading,.empty{text-align:center; padding:40px 0; color:#999;}
+.load-more{text-align:center; padding:16px; color:{{primaryColor}}; font-size:14px;}
+</style>

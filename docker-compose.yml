@@ -126,7 +126,7 @@ services:
       MILVUS_HOST: milvus
       MILVUS_PORT: "19530"
       EMBEDDING_MODEL: bge-large-zh-v1.5
-      LLM_MODEL: ${LLM_MODEL:-qwen-plus}
+      LLM_MODEL: ${LLM_MODEL:-deepseek-v4-pro}
       DASHSCOPE_API_KEY: ${DASHSCOPE_API_KEY:-}
       DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
       ENVIRONMENT: ${ENVIRONMENT:-production}

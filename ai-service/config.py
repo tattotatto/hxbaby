@@ -10,9 +10,9 @@ class Settings(BaseSettings):
     ai_service_port: int = 8001
     debug: bool = False
 
-    # LLM
+    # LLM — 主模型
+    llm_model: str = "deepseek-v4-pro"
     qwen_api_key: str = ""
-    qwen_model: str = "qwen-plus"
     qwen_base_url: str = "https://dashscope.aliyuncs.com/compatible-mode/v1"
     deepseek_api_key: str = ""
     deepseek_base_url: str = "https://api.deepseek.com/v1"

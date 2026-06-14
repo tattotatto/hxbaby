@@ -7,20 +7,29 @@ class LLMAdapter:
     """LLM适配器，封装多模型，提供统一接口（懒初始化）"""
 
     MODEL_CONFIGS = {
+        # 通义千问系列
         "qwen-plus": {
             "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+            "provider": "qwen",
         },
         "qwen-max": {
             "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+            "provider": "qwen",
         },
+        # DeepSeek 系列
         "deepseek-chat": {
             "base_url": "https://api.deepseek.com/v1",
+            "provider": "deepseek",
+        },
+        "deepseek-v4-pro": {
+            "base_url": "https://api.deepseek.com/v1",
+            "provider": "deepseek",
         },
     }
 
     def __init__(self, model: str = None, temperature: float = 0.3, max_tokens: int = 2048):
         settings = get_settings()
-        self.model_name = model or settings.qwen_model
+        self.model_name = model or settings.llm_model
         self.temperature = temperature
         self.max_tokens = max_tokens
         self._client = None  # 懒初始化
@@ -31,15 +40,19 @@ class LLMAdapter:
             return self._client
 
         from langchain_openai import ChatOpenAI
+        import os
 
         settings = get_settings()
-        config = self.MODEL_CONFIGS.get(self.model_name, self.MODEL_CONFIGS["qwen-plus"])
-        api_key = settings.qwen_api_key
+        config = self.MODEL_CONFIGS.get(self.model_name, self.MODEL_CONFIGS["deepseek-v4-pro"])
+        provider = config.get("provider", "deepseek")
 
-        # 尝试从环境变量读取
-        import os
-        if not api_key:
-            api_key = os.environ.get("QWEN_API_KEY", "")
+        # 根据 provider 选择对应的 API Key
+        if provider == "deepseek":
+            api_key = settings.deepseek_api_key or os.environ.get("DEEPSEEK_API_KEY", "")
+        elif provider == "qwen":
+            api_key = settings.qwen_api_key or os.environ.get("QWEN_API_KEY", "")
+        else:
+            api_key = ""
 
         self._client = ChatOpenAI(
             model=self.model_name,

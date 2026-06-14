@@ -1,6 +1,4 @@
 # 完整服务编排 — AI系统 + 工厂系统
-version: '3.8'
-
 services:
   # === 基础设施 ===
   postgres:

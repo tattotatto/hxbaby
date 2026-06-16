@@ -13,12 +13,7 @@ async def lifespan(app: FastAPI):
     import logging
     logger = logging.getLogger(__name__)
     logger.info("AI Service starting up...")
-    try:
-        from knowledge.embedder import get_embedder
-        get_embedder()
-        logger.info(f"Embedding model loaded: {settings.embedding_model}")
-    except Exception as e:
-        logger.warning(f"Embedding model not initialized (will lazy-load): {e}")
+    # 嵌入模型不在启动时加载，延迟到首次使用时加载（避免大模型下载阻塞启动）
 
     try:
         from knowledge.vector_store import get_vector_store

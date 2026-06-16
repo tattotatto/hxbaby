@@ -18,12 +18,18 @@ class Embedder:
             local_path = snapshot_download(
                 repo_id=model_name,
                 cache_dir=os.environ.get("SENTENCE_TRANSFORMERS_HOME", None),
+                max_workers=2,
+                tqdm_class=None,  # disable progress bars in logs
+                resume_download=True,
             )
             logger.info(f"Model downloaded to: {local_path}")
             self.model = SentenceTransformer(local_path, device=device)
         except Exception as e:
             logger.warning(f"snapshot_download failed for {model_name}, trying direct load: {e}")
-            self.model = SentenceTransformer(model_name, device=device)
+            try:
+                self.model = SentenceTransformer(model_name, device=device)
+            except Exception as e2:
+                raise RuntimeError(f"Failed to load embedding model {model_name}: {e2}")
 
     def embed(self, text: str) -> list:
         """单文本向量化"""

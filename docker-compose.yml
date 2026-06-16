@@ -86,6 +86,7 @@ services:
         condition: service_healthy
       minio:
         condition: service_healthy
+    command: ["milvus", "run", "standalone"]
     environment:
       ETCD_ENDPOINTS: etcd:2379
       MINIO_ADDRESS: minio:9000

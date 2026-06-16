@@ -33,7 +33,7 @@
 1. Python AI 服务骨架：`ai-service/` 目录结构、`main.py`、`config.py`、`requirements.txt`、`Dockerfile`
 2. Go 业务服务骨架：`biz-service/` 目录结构、`cmd/main.go`、`config.go`、`router.go`、`Dockerfile`
 3. 两个服务各实现 `/health` 端点
-4. 验证：`curl localhost:8001/ai/health` 和 `curl localhost:8080/health` 都返回 `{"status":"ok"}`
+4. 验证：`curl localhost:8001/ai/health` 和 `curl localhost:9090/health` 都返回 `{"status":"ok"}`
 
 **验收标准**:
 - [ ] Python 服务启动，`/ai/health` 返回 ok

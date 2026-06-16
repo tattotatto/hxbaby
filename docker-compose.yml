@@ -154,7 +154,7 @@ services:
       CODEGEN_SERVICE_URL: http://codegen-service:3002
       ENVIRONMENT: ${ENVIRONMENT:-production}
     ports:
-      - "8080:8080"
+      - "9090:8080"
 
   # Node.js CodeGen Service (Express)
   codegen-service:

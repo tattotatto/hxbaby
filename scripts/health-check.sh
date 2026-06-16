@@ -21,7 +21,7 @@ echo ""
 
 FAILURES=0
 
-check_url "http://localhost:8080/health"      "Go Biz Service"      || ((FAILURES++))
+check_url "http://localhost:9090/health"      "Go Biz Service"      || ((FAILURES++))
 check_url "http://localhost:8001/ai/health"   "Python AI Service"   || ((FAILURES++))
 check_url "http://localhost:3002/health"      "Node.js CodeGen"     || ((FAILURES++))
 check_url "http://localhost"                  "Nginx Frontend"      || ((FAILURES++))

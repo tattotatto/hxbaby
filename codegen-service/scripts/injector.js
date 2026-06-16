@@ -18,7 +18,7 @@ function buildInjectionConfig(project) {
     secondaryColor: brand.secondaryColor || '#ff9800',
     logo: brand.logo || '/static/logo.png',
     footer: brand.footer || `© ${new Date().getFullYear()} ${project.name || ''}`,
-    baasBaseURL: process.env.BAAS_BASE_URL || 'http://localhost:8080',
+    baasBaseURL: process.env.BAAS_BASE_URL || 'http://localhost:9090',
     apiKey: project.api_key || 'YOUR_API_KEY',
     projectId: String(project.id || ''),
     wxAppId: project.wx_app_id || 'YOUR_WX_APP_ID',

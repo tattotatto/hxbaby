@@ -144,12 +144,20 @@ async def list_documents():
 
         # 查询所有实体，按 metadata.source 去重
         collection.load()
-        # 查询全部 — 获取 content, metadata 字段
-        results = collection.query(
-            expr="id >= 0",
-            output_fields=["content", "chunk_index", "metadata"],
-            limit=100000,
-        )
+        # 查询全部 — 获取 content, metadata 字段（分批，避免超 Milvus 限制）
+        count = collection.num_entities
+        if count == 0:
+            return DocumentListResponse(documents=[], total=0)
+        all_results = []
+        batch_size = 8000
+        for offset in range(0, count, batch_size):
+            batch = collection.query(
+                expr="id >= 0",
+                output_fields=["content", "chunk_index", "metadata"],
+                limit=batch_size,
+                offset=offset,
+            )
+            all_results.extend(batch)
 
         # 按 source 聚合
         doc_map = {}
@@ -187,21 +195,31 @@ async def delete_document(source: str):
         vector_store._connect()
         collection = vector_store.collection
 
-        # 先查询该 source 有多少 chunks
+        # 先查询该 source 有多少 chunks（分批查询）
         collection.load()
-        results = collection.query(
-            expr=f"metadata['source'] == '{source}'",
-            output_fields=["id"],
-            limit=100000,
-        )
-        chunk_count = len(results)
+        count = collection.num_entities
+        all_ids = []
+        batch_size = 8000
+        source_expr = f"metadata['source'] == '{source}'"
+        for offset in range(0, count, batch_size):
+            batch = collection.query(
+                expr=source_expr,
+                output_fields=["id"],
+                limit=batch_size,
+                offset=offset,
+            )
+            all_ids.extend([r["id"] for r in batch])
+        chunk_count = len(all_ids)
 
         if chunk_count == 0:
             raise HTTPException(status_code=404, detail=f"文档不存在: {source}")
 
         # 逐条删除
-        ids_to_delete = [str(r["id"]) for r in results]
-        collection.delete(f"id in [{','.join(ids_to_delete)}]")
+        ids_to_delete = [str(id_) for id_ in all_ids]
+        # 分批删除（Milvus 限制表达式长度）
+        for i in range(0, len(ids_to_delete), 500):
+            batch_ids = ids_to_delete[i:i+500]
+            collection.delete(f"id in [{','.join(batch_ids)}]")
         collection.flush()
 
         return DeleteResponse(source=source, deleted_chunks=chunk_count)
@@ -227,13 +245,18 @@ async def get_stats():
             vector_store._connect()
             collection = vector_store.collection
             collection.load()
-            results = collection.query(
-                expr="id >= 0",
-                output_fields=["metadata"],
-                limit=min(total_chunks, 100000),
-            )
+            all_results = []
+            batch_size = 8000
+            for offset in range(0, total_chunks, batch_size):
+                batch = collection.query(
+                    expr="id >= 0",
+                    output_fields=["metadata"],
+                    limit=batch_size,
+                    offset=offset,
+                )
+                all_results.extend(batch)
             sources = set()
-            for r in results:
+            for r in all_results:
                 meta = r.get("metadata", {})
                 src = meta.get("source", "")
                 if src:

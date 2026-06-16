@@ -10,6 +10,7 @@ import ProjectGuide from './pages/ProjectGuide';
 import ContentManager from './pages/ContentManager';
 import ActivityManager from './pages/ActivityManager';
 import Billing from './pages/Billing';
+import KnowledgeManager from './pages/KnowledgeManager';
 import ErrorBoundary from './components/ErrorBoundary';
 
 function App() {
@@ -27,6 +28,7 @@ function App() {
             <Route path="/content" element={<ContentManager />} />
             <Route path="/activities" element={<ActivityManager />} />
             <Route path="/billing" element={<Billing />} />
+            <Route path="/knowledge" element={<KnowledgeManager />} />
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
           </Routes>
         </ErrorBoundary>

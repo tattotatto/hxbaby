@@ -128,6 +128,14 @@ func Setup(cfg *config.Config) *gin.Engine {
 	aiEnhance.POST("/generate-selling-points", aiEnhanceH.GenerateSellingPoints)
 	aiEnhance.POST("/activity-report", aiEnhanceH.GenerateActivityReport)
 
+	// Knowledge base management (require customer JWT)
+	knowledgeH := handler.NewKnowledgeHandler(cfg.AIServiceURL)
+	knowledge := v1.Group("/knowledge", middleware.AuthRequired(cfg.JWTSecret))
+	knowledge.POST("/upload", knowledgeH.Upload)
+	knowledge.GET("/documents", knowledgeH.ListDocuments)
+	knowledge.DELETE("/documents/:source", knowledgeH.DeleteDocument)
+	knowledge.GET("/stats", knowledgeH.GetStats)
+
 	_ = convRepo
 	_ = msgRepo
 

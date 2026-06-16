@@ -56,6 +56,9 @@ app.include_router(chat_router, prefix="/ai", tags=["chat"])
 from api.generate import router as generate_router
 app.include_router(generate_router, prefix="/ai", tags=["generate"])
 
+from api.knowledge import router as knowledge_router
+app.include_router(knowledge_router, prefix="/ai", tags=["knowledge"])
+
 
 if __name__ == "__main__":
     import uvicorn

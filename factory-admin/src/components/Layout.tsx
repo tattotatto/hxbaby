@@ -2,6 +2,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { Layout as AntLayout, Menu, Button, Typography, theme } from 'antd';
 import {
   AppstoreOutlined,
+  BookOutlined,
   CreditCardOutlined,
   FileTextOutlined,
   GiftOutlined,
@@ -43,6 +44,11 @@ export default function AppLayout({ children }: AppLayoutProps) {
       key: '/activities',
       icon: <GiftOutlined />,
       label: '活动管理',
+    },
+    {
+      key: '/knowledge',
+      icon: <BookOutlined />,
+      label: '知识库管理',
     },
     {
       key: '/billing',
